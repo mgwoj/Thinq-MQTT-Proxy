@@ -125,6 +125,7 @@ def windStrength(pwindStrength) {
 def processStateData(data) {
     
     logger("debug", "processStateData(${data})")
+    super.processStateData(data)
 
     if (parent.checkValue(data, "airState.diagCode"))
         sendEvent(name: "diagCode", value: data["airState.diagCode"], displayed: false)

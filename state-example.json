@@ -1,8 +1,13 @@
 {
-    "region": "pl-PL",
-    "countryCode": "PL",
-    "pubMqttServer": "tcp://mqtt-server.lan:1883",
-    "langCode": "pl-PL",
+    "region": "fr-FR",
+    "countryCode": "FR",
+    "pubMqttServer": "tcp://mqtt:1883",
+    "langCode": "fr-FR",
     "certSource": "Use Cloud Service",
-    "pubClientId": "thinq"
+    "pubClientId": "thinq",
+    "pubMqttTopic": "thinq",
+    "pubUserName": "mqtt",
+    "pubPassword": "TopSecretPW",
+    "pubMqttLWTTopic": "thinq/LWT",
+    "pollTime": 30
 }

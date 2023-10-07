@@ -33,6 +33,7 @@ class ThinQ_Fridge extends Device {
 
 def processStateData(data) {
     logger("debug", "processStateData(${data})")
+    super.processStateData(data)
 
     if (data.DoorOpenState == "OPEN")
       sendEvent(name: "contact", value: "open")

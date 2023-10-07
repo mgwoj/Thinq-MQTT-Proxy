@@ -44,6 +44,7 @@ class ThinQ_Washer extends Device {
 
 def processStateData(data) {
     logger("debug", "processStateData(${data})")
+    super.processStateData(data)
 
     if (parent.checkValue(data,'Initial_Time_H') || parent.checkValue(data,'Initial_Time_M')) {
         def runTime = 0

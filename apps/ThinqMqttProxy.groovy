@@ -13,11 +13,11 @@ class ThinqMqttProxy {
             System.exit(1)
         }
         switch (args[0]) {
-            case "init" : doInit()
+            case "init":doInit()
                 break
-            case "run" : doRun()
+            case "run":doRun()
                 break
-            default: printHelp()
+            default:printHelp()
                 System.exit(1)
         }
         System.exit(0)
@@ -38,8 +38,7 @@ class ThinqMqttProxy {
 
     static void doRun() {
         def integration = new ThinQ_Integration()
-        integration.interfaces.pubMqtt.connect(integration.state.pubMqttServer, integration.state.pubClientId,
-                integration.state.pubUserName, integration.state.pubPassword)
+        integration.interfaces.pubMqtt.connect(integration.state.pubMqttServer, integration.state.pubClientId, integration.state.pubUserName, integration.state.pubPassword, integration.state.pubMqttLWTTopic)
         integration.prefDevices()
         initializeFriendlyNames(integration)
         integration.state.save(integration.STATE_FILE)

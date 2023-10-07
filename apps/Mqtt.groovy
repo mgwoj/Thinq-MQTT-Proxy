@@ -5,6 +5,10 @@
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientSslConfig
 import com.hivemq.client.mqtt.MqttClientState
+import com.hivemq.client.mqtt.lifecycle.MqttClientConnectedContext
+import com.hivemq.client.mqtt.lifecycle.MqttClientConnectedListener
+import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedContext
+import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedListener
 import com.hivemq.client.mqtt.datatypes.MqttQos
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient
 import groovy.json.JsonOutput
@@ -39,6 +43,9 @@ class Mqtt {
     }
 
     void connect(String serverUrl, String clientId, String userName, String password) {
+        connect(serverUrl, clientId, username, password, null)
+    }
+    void connect(String serverUrl, String clientId, String userName, String password, String lwtTopic) {
         URI uri = new URI(serverUrl)
         client = MqttClient.builder()
                 .identifier(clientId)
@@ -49,9 +56,31 @@ class Mqtt {
                 .buildAsync()
 
         log.info("starting connection the server {}...", serverUrl)
-        if (userName && password) {
-            client.connectWith().simpleAuth().username(userName).password(password.getBytes()).applySimpleAuth().send()
-        } else {
+        if (userName && password && lwtTopic) {
+            client.connectWith()
+                .willPublish()
+                .topic(lwtTopic)
+                .payload("offline".getBytes())
+                .qos(MqttQos.AT_MOST_ONCE)
+                .retain(true)
+                .applyWillPublish()
+                .simpleAuth().username(userName).password(password.getBytes()).applySimpleAuth().send()
+                .whenComplete((connAck, throwable) -> {
+                    send(lwtTopic, "online")
+                });
+        } else if (lwtTopic) {
+            client.connectWith()
+                .willPublish()
+                .topic(lwtTopic)
+                .payload("offline".getBytes())
+                .qos(MqttQos.AT_MOST_ONCE)
+                .retain(true)
+                .applyWillPublish()
+                .send()
+                .whenComplete((connAck, throwable) -> {
+                    send(lwtTopic, "online")
+                });
+        } else{
             client.connect()
         }
         log.info("connected!")
@@ -72,11 +101,24 @@ class Mqtt {
                 .useMqttVersion3()
                 .automaticReconnectWithDefaultConfig()
                 .sslConfig(sslConfig)
+                .addDisconnectedListener(new MqttClientDisconnectedListener() {
+                    @Override
+                    public void onDisconnected( MqttClientDisconnectedContext context) {
+                        log.warn("Disconnected")
+                    }
+                })
+                .addConnectedListener(new MqttClientConnectedListener() {
+                    @Override
+                    public void onConnected(MqttClientConnectedContext context) {
+                        log.info("Connected")
+                    }
+                })
                 .buildAsync()
 
 
         log.info("starting connection the server {}...", serverUrl)
         client.connect()
+        //client.connectWith().keepAlive(30)
         log.info("connected!")
     }
 

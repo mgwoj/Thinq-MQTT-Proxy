@@ -206,9 +206,9 @@ def prefMain() {
 		if (mqttResult.mqttServer != "ssl://common.iot.aic.lgthinq.com:8883" && !mqttResult.mqttServer.contains("-ats.iot")) {
     		def mqttServerParts = mqttResult.mqttServer.split(".iot.")
     		state.mqttServer = mqttServerParts[0]+'-ats.iot.'+mqttServerParts[1]
-		}            
-        else
+		} else {
 			state.mqttServer = mqttResult.mqttServer
+		}
 	}
 
 //	return dynamicPage(name: "prefMain", title: "LG ThinQ OAuth", nextPage: "prefCert", uninstall:false, install: false) {
@@ -376,7 +376,9 @@ def initialize() {
 			childDevice.initialize()
 		}
 		if (deviceDetails.version == "thinq2") {
-			getDeviceSnapshot(deviceDetails, childDevice)
+			new Timer().schedule({
+				getDeviceSnapshot(deviceDetails, childDevice)
+			} as TimerTask, 0, 1000 * 60 * state.pollTime)
 		}
 	}
 
@@ -506,27 +508,31 @@ def lgAPIGet(uri) {
 		return result
 	}
 	catch (Exception e) {
-		def data = e?.getResponse()?.data
-		if (data != null) {
-			if (responseCodeText[data.resultCode] == "EMP_AUTHENTICATION_FAILED") {
-				def refreshResult = getAccessToken([refresh_token: state.refresh_token, grant_type: "refresh_token"])
-				if (refreshResult.toString().startsWith("LG.OAUTH.EC")) {
-					state.access_token = null
-					logger("error", "lgAPIGet(${uri}) - Refresh token failed ${refreshResult}")
+		if (e instanceof java.net.UnknownHostException || e instanceof javax.net.ssl.SSLHandshakeException) {
+			logger("error", "lgAPIGet(${uri}) - ${e.getMessage()}")
+		} else {
+			def data = e?.getResponse()?.data
+			if (data != null) {
+				if (responseCodeText[data.resultCode] == "EMP_AUTHENTICATION_FAILED") {
+					def refreshResult = getAccessToken([refresh_token: state.refresh_token, grant_type: "refresh_token"])
+					if (refreshResult.toString().startsWith("LG.OAUTH.EC")) {
+						state.access_token = null
+						logger("error", "lgAPIGet(${uri}) - Refresh token failed ${refreshResult}")
+					}
+					else {
+						state.auth_retry_cnt++
+						state.access_token = refreshResult.access_token
+						if (refreshResult.refresh_token)
+							state.refresh_token = refreshResult.refresh_token
+						if (state.access_token != null & state.auth_retry_cnt < AUTH_RETRY_MAX)
+							return lgAPIGet(uri)
+						else
+							state.auth_retry_cnt = 0
+					}
 				}
 				else {
-					state.auth_retry_cnt++
-					state.access_token = refreshResult.access_token
-					if (refreshResult.refresh_token)
-						state.refresh_token = refreshResult.refresh_token
-					if (state.access_token != null & state.auth_retry_cnt < AUTH_RETRY_MAX)
-						return lgAPIGet(uri)
-					else
-						state.auth_retry_cnt = 0
+					logger("error", "lgAPIGet(${uri}) - ${responseCodeText[data.resultCode]}")
 				}
-			}
-			else {
-				logger("error", "lgAPIGet(${uri}) - ${responseCodeText[data.resultCode]}")
 			}
 		}
 	}
@@ -688,6 +694,7 @@ def getAccessToken(body) {
 		}
 	}
 	catch (Exception e) {
+		logger("error", "getAccessToken - ${e}")
 		def data = e?.getResponse()?.data
 		if (data != null) {
 			logger("error", "getAccessToken(${body}) - OAuth error: ${data.error.code}: ${data.error.message}")

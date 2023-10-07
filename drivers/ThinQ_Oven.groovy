@@ -34,6 +34,7 @@ class ThinQ_Oven extends Device {
 
 def processStateData(data) {
     logger("debug", "processStateData(${data})")
+    super.processStateData(data)
 
     def isFahrenheit = data["MonTempUnit"] == 0
 

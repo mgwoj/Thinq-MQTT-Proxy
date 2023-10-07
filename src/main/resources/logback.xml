@@ -6,10 +6,10 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>thinq-mqtt-proxy.log</file>
+        <file>logs/thinq-mqtt-proxy.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover -->
-            <fileNamePattern>thinq-mqtt-proxy.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/thinq-mqtt-proxy.%d{yyyy-MM-dd}.log</fileNamePattern>
 
             <!-- keep 10 days' worth of history capped at 1GB total size -->
             <maxHistory>10</maxHistory>
@@ -22,7 +22,7 @@
         </encoder>
     </appender>
 
-    <root level="info">
+    <root level="all">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE" />
     </root>

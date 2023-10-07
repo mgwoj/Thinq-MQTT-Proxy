@@ -94,9 +94,13 @@ class Device {
         log."${level}" "${device.displayName} ${msg}"
     }
 
+    def processStateData(stateData) {
+        sendEvent(name: "lastUpdate", value: new Date().format("yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.default))
+    }
+
     void sendEvent(LinkedHashMap<String, Object> eventMap) {
         log.info("{}", eventMap)
-        interfaces.pubMqtt.send("thinq/" + friendlyName + "/event/" + eventMap.name, eventMap.value.toString())
+        interfaces.pubMqtt.send(parent.state.pubMqttTopic + "/" + friendlyName + "/event/" + eventMap.name, eventMap.value.toString())
     }
 
     void pauseExecution(int timeInMs) {

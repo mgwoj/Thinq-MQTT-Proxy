@@ -1,3 +1,5 @@
+[![Docker Build and Push](https://github.com/pifou25/Thinq-MQTT-Proxy/actions/workflows/dockerhub.yml/badge.svg)](https://github.com/pifou25/Thinq-MQTT-Proxy/actions/workflows/dockerhub.yml)
+
 # LG Thinq MQTT Proxy
 
 This application can connect to LG Thinq infrastructure and register for the updates coming from smart LG devices. Received messages are converted into JSON payload and sent to your private MQTT server. This way you can enhance your home automation (like OpenHab or HomeAssistant) thanks to received notifications from your fridge or washing machine.
@@ -53,6 +55,39 @@ sudo ./install.sh
 It should create and start `thinq-mqtt-proxy` service. You can verify if works correctly by inspecting `thinq-mqtt-proxy.log` or by issuing command
 ```shell
 sudo systemctl status thinq-mqtt-proxy.service
+```
+
+### As a docker container
+
+Before using it, build the image using
+```shell
+docker build -t thinq2mqtt .
+```
+
+You can now now start the container using the image and linking you state.json to "/home/app/state.json".
+Make sure to set the timezone by passing an environment variable "TZ" using the timezone from
+https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+
+First step is to init the state.json file with the authentication url: run a container in interactive mode (-ti) and with 'init' parameter.
+On non-unix system, replace $PWD by the current working directory on your host.
+```shell
+docker run -ti --rm -e "TZ=Europe/Paris" --name thinq2mqtt -v=$PWD/state-example.json:/home/app/state.json thinq2mqtt init
+```
+
+Second step is just to start the container with the json file
+```shell
+docker run -e "TZ=Europe/Paris" --name thinq2mqtt -v=$PWD/state-example.json:/home/app/state.json thinq2mqtt
+```
+
+#### Logging configuration
+
+Per default logging is configured to create a rolling logfile in `/home/app/logs` called `thinq-mqtt-proxy.log`. For configuration the file `/home/app/logback.xml` is used. When creating the container you can mount the folder and file to your local disk. This way you have acces to the logs and they are preserved when recreating the container. You can also change the logging configuration by editing your local file.
+
+Example:
+```shell
+docker run thinq2mqtt -e "TZ=Europe/Vienna" -v=/home/app/state.json:</path/to>/state.json \
+                                            -v=/home/app/logs:</path/to/>logs \
+                                            -v=/home/app/logback.xml:</path/to/>logback.xml
 ```
 
 ## Items to do
